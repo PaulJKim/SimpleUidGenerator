@@ -12,8 +12,6 @@ defmodule UidGenerator do
 
     File.write("deploy_counter.txt", new_deploy_count)
 
-    IO.puts("GOT HERE deploy count: #{Integer.to_string(deploy_count)}")
-
     GenServer.start_link(
       __MODULE__,
       [id_initial: id_initial, deploy_num: deploy_count],
