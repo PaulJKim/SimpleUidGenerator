@@ -2,8 +2,6 @@ defmodule UidUser do
   use GenServer
 
   def child_spec(i) do
-    IO.puts("Child Spec")
-
     %{
       id: :"uid_user_#{i}",
       start: {__MODULE__, :start_link, [[index: i]]}
@@ -27,25 +25,43 @@ defmodule UidUser do
   end
 
   def start_link(opts) do
-    uid_generator = UidGenerator
-
     GenServer.start_link(
       __MODULE__,
-      uid_generator: uid_generator,
       index: opts[:index]
     )
   end
 
   @impl true
-  @spec init(nil | maybe_improper_list | map) :: {:ok, %{uid_generator: any}}
   def init(opts) do
-    IO.inspect(opts)
-    {:ok, %{uid_generator: opts[:uid_generator]}}
+    {:ok,
+     %{
+       uid_generator: opts[:uid_generator],
+       index: opts[:index],
+       internal_counter: 0,
+       timestamp: div(System.system_time(:millisecond), 500)
+     }}
   end
 
   @impl true
   def handle_call(:send_message, _from, state) do
-    {:reply, UidGenerator.get_uid(state.uid_generator), state}
+    uid = get_uid(state.timestamp, state.index, state.internal_counter)
+
+    if state.internal_counter >= 15 do
+      {:reply, uid,
+       %{state | timestamp: div(System.system_time(:millisecond), 500), internal_counter: 0}}
+    else
+      {:reply, uid, %{state | internal_counter: state.internal_counter + 1}}
+    end
+  end
+
+  defp get_uid(timestamp, updater_index, internal_counter) do
+    IO.puts("Inputs: #{timestamp} #{updater_index} #{internal_counter}")
+
+    <<uid::unsigned-integer-31>> =
+      <<timestamp::unsigned-integer-22, updater_index::unsigned-integer-5,
+        internal_counter::unsigned-integer-4>>
+
+    uid
   end
 end
 

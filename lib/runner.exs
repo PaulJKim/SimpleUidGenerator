@@ -3,6 +3,7 @@
 
 for user <- [user1, user2, user3] do
   spawn(fn -> UidUser.start_using_uids(user) end)
+  :timer.sleep(500)
 end
 
 UidUser.start_using_uids(user1)
